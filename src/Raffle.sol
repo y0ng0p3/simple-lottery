@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 
 /**
  * @title A simple Raffle contract
@@ -10,7 +11,7 @@ import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/V
  * @notice This contract is for creating a simple Raffle
  * @dev Implements Chainlink VRFv2.5
  */
-contract Raffle is VRFConsumerBaseV2Plus {
+contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     /* Type Declarations */
     enum RaffleState {
         OPEN,
@@ -88,11 +89,39 @@ contract Raffle is VRFConsumerBaseV2Plus {
     }
 
     /**
+     * Getter function to retrieve entranceFee
+     */
+    function getEntraceFee() external view returns (uint256) {
+        return s_entranceFee;
+    }
+
+    /**
+     * A funciton that Chainlink nodes call to see if the lottery is ready to have a winner
+     * @param //checkData - the data to check to determine if the upkeepNeeded condition is met
+     * @return upkeepNeeded - true if it's time to restart the lottery
+     * @return performData - data to be transfer to the perfomUpkeep() function
+     */
+    function checkUpkeep(bytes calldata /*checkData*/ )
+        external
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory /* performData */ )
+    {
+        upkeepNeeded = (block.timestamp >= s_lastTimestamp + i_interval) && (s_raffleState == RaffleState.OPEN)
+            && (address(this).balance > 0) && (s_players.length > 0);
+        return (upkeepNeeded, "");
+    }
+
+    function performUpkeep(bytes calldata performData) external {
+      pickWinner();
+    }
+
+    /**
      * Get a random number
      * Use the random number to pick a player between the s_players array
      * Be automatically called
      */
-    function pickWinner() external {
+    function pickWinner() internal {
         if (block.timestamp < s_lastTimestamp + i_interval) revert Raffle__NotReady();
 
         s_raffleState = RaffleState.PICKING;
@@ -107,13 +136,6 @@ contract Raffle is VRFConsumerBaseV2Plus {
             extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: true}))
         });
         uint256 requestId = s_vrfCoordinator.requestRandomWords(request);
-    }
-
-    /**
-     * Getter function to retrieve entranceFee
-     */
-    function getEntraceFee() external view returns (uint256) {
-        return s_entranceFee;
     }
 
     function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
