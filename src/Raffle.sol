@@ -113,7 +113,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     }
 
     function performUpkeep(bytes calldata performData) external {
-      pickWinner();
+        pickWinner();
     }
 
     /**
