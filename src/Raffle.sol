@@ -96,6 +96,13 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     }
 
     /**
+     * Get funciton to retrieve the state of the raffle
+     */
+    function getRaffleState() external view returns (RaffleState) {
+        return s_raffleState;
+    }
+
+    /**
      * A funciton that Chainlink nodes call to see if the lottery is ready to have a winner
      * @param //checkData - the data to check to determine if the upkeepNeeded condition is met
      * @return upkeepNeeded - true if it's time to restart the lottery
