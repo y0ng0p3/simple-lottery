@@ -42,10 +42,10 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
     /* Errors */
     error Raffle__NotOwner();
-    error Raffle__ZeroEntranceFee();
+    error Raffle__NotEnoughFunds();
     error Raffle__NotReady();
     error Raffle__TransferFailed();
-    error Raffle__NotOpen();
+    error Raffle__RaffleNotOpen();
 
     /* Modifiers */
     // modifier onlyOwner() {
@@ -77,13 +77,13 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     fallback() external payable {}
 
     function updateEntranceFee(uint256 newFee) external onlyOwner {
-        if (newFee == 0) revert Raffle__ZeroEntranceFee();
+        if (newFee == 0) revert Raffle__NotEnoughFunds();
         s_entranceFee = newFee;
     }
 
     function enterRaffle() external payable {
-        if (msg.value < s_entranceFee) revert Raffle__ZeroEntranceFee();
-        if (s_raffleState == RaffleState.PICKING) revert Raffle__NotOpen();
+        if (msg.value < s_entranceFee) revert Raffle__NotEnoughFunds();
+        if (s_raffleState == RaffleState.PICKING) revert Raffle__RaffleNotOpen();
         s_players.push(payable(msg.sender));
         emit RaffleEntered(msg.sender);
     }
@@ -100,6 +100,13 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
      */
     function getRaffleState() external view returns (RaffleState) {
         return s_raffleState;
+    }
+
+    /**
+     * Get function to retrieve a player by its index
+     */
+    function getPlayer(uint256 index) external view returns (address) {
+      return s_players[index];
     }
 
     /**
