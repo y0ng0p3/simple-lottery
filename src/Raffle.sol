@@ -106,7 +106,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
      * Get function to retrieve a player by its index
      */
     function getPlayer(uint256 index) external view returns (address) {
-      return s_players[index];
+        return s_players[index];
     }
 
     /**
@@ -126,7 +126,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         return (upkeepNeeded, "");
     }
 
-    function performUpkeep(bytes calldata performData) external {
+    function performUpkeep(bytes calldata /*performData*/) external {
         pickWinner();
     }
 
@@ -152,7 +152,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         uint256 requestId = s_vrfCoordinator.requestRandomWords(request);
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
+    function fulfillRandomWords(uint256 /*requestId*/, uint256[] calldata randomWords) internal override {
         uint256 winnerIndex = randomWords[0] % s_players.length;
         address payable winner = s_players[winnerIndex];
         s_lastWinner = winner;

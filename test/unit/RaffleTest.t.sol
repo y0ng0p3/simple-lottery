@@ -39,36 +39,36 @@ contract RaffleTest is Test {
     }
 
     function testRaffleRevertsWhenNotEnoughFunds() public {
-      vm.prank(PLAYER);
-      vm.expectRevert(Raffle.Raffle__NotEnoughFunds.selector);
-      raffle.enterRaffle();
+        vm.prank(PLAYER);
+        vm.expectRevert(Raffle.Raffle__NotEnoughFunds.selector);
+        raffle.enterRaffle();
     }
 
     function testRaffleRecordsPlayers() public {
-      vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
-      vm.prank(PLAYER);
-      vm.expectEmit(true, false, false, false, address(raffle));
-      emit RaffleEntered(PLAYER);
-      raffle.enterRaffle{value: entranceFee}();
-      address playerRecorded = raffle.getPlayer(0);
-      assert(playerRecorded == PLAYER);
+        vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
+        vm.prank(PLAYER);
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit RaffleEntered(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        address playerRecorded = raffle.getPlayer(0);
+        assert(playerRecorded == PLAYER);
     }
 
     function testShouldNotPlayersShouldNotEnterWhenRaffleIsPicking() public {
-      vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
-      vm.prank(PLAYER);
-      // Make sure the list of players isn't empty
-      raffle.enterRaffle{value: entranceFee}();
-      
-      // Make sure enough time has passed and the block number has changed
-      vm.warp(block.timestamp + interval + 1);
-      vm.roll(block.number + 1);
+        vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
+        vm.prank(PLAYER);
+        // Make sure the list of players isn't empty
+        raffle.enterRaffle{value: entranceFee}();
 
-      // Simulate the Chainlink automation call
-      raffle.performUpkeep("");
-      
-      vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
-      vm.prank(PLAYER);
-      raffle.enterRaffle{value: entranceFee}();
+        // Make sure enough time has passed and the block number has changed
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        // Simulate the Chainlink automation call
+        raffle.performUpkeep("");
+
+        vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
     }
 }
