@@ -71,4 +71,27 @@ contract RaffleTest is Test {
         vm.prank(PLAYER);
         raffle.enterRaffle{value: entranceFee}();
     }
+
+    function testCheckUpkeepReturnsFalseWhenNoBalance() public {
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        (bool upkeepNeeded,) = raffle.checkUpkeep("");
+        assert(!upkeepNeeded);
+    }
+
+    function testCheckUpkeepReturnsFalseIfRaffleNotOpen() public {
+        vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
+        vm.prank(PLAYER);
+        // Make sure the list of players isn't empty
+        raffle.enterRaffle{value: entranceFee}();
+
+        // Make sure enough time has passed and the block number has changed
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        // Simulate the Chainlink automation call
+        raffle.performUpkeep("");
+        (bool upkeepNeeded,) = raffle.checkUpkeep("");
+        assert(!upkeepNeeded);
+    }
 }
