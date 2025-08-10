@@ -2,16 +2,18 @@
 pragma solidity ^0.8.19;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {HelperConfig, DeployConstants} from "script/HelperConfig.s.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
+import {HelperConfig, DeployConstants} from "script/HelperConfig.s.sol";
 import {LinkToken} from "test/mocks/LinkToken.sol";
 
 contract CreateSubscription is Script {
     uint256 public s_latestSubId;
     mapping(uint256 chainId => uint256[] subIds) public s_chainIdToSubIds;
-    HelperConfig public helperConfig = new HelperConfig();
+    HelperConfig public helperConfig;
 
     function createSubscriptionUsingConfig() public returns (uint256, address) {
+        helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         address vrfCoordinator = config.vrfCoordinator;
         (config.subscriptionId, config.vrfCoordinator) = createSubscription(vrfCoordinator);
@@ -80,5 +82,31 @@ contract FundSubscription is Script, DeployConstants {
 
     function run() public {
         fundSubscriptionUsingConfig();
+    }
+}
+
+contract AddConsumer is Script {
+    HelperConfig public helperConfig;
+
+    function addConsumerUsingConfig(address consumer) public {
+        helperConfig = new HelperConfig();
+        uint256 subId = helperConfig.getConfig().subscriptionId;
+        address vrfCoordinator = helperConfig.getConfig().vrfCoordinator;
+        addConsumer(consumer, vrfCoordinator, subId);
+    }
+
+    function addConsumer(address consumer, address vrfCoordinator, uint256 subId) public {
+        console2.log("Adding consumer contract: ", consumer);
+        console2.log("to the vrfCoordinator: ", vrfCoordinator);
+        console2.log("on the chain with the id: ", block.chainid);
+
+        vm.startBroadcast();
+        VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(subId, consumer);
+        vm.stopBroadcast();
+    }
+
+    function run() external {
+        address lastDeployedContract = DevOpsTools.get_most_recent_deployment("Raffle", block.chainid);
+        addConsumerUsingConfig(lastDeployedContract);
     }
 }
