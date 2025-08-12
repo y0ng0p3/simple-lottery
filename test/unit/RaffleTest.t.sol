@@ -94,4 +94,34 @@ contract RaffleTest is Test {
         (bool upkeepNeeded,) = raffle.checkUpkeep("");
         assert(!upkeepNeeded);
     }
+
+    function testPerformUpkeepOnlyRunIfCheckUpkeepTrue() public {
+        vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+
+        vm.warp(block.timestamp + interval + 1); // The test fails if you for example you don't update the timestamp by remove "interval + 1"
+        vm.roll(block.number + 1);
+
+        (bool s,) = address(raffle).call(abi.encodeCall(raffle.performUpkeep, abi.encode(bytes(""))));
+        assert(s);
+    }
+
+    function testPerformUpkeepRevertsIfCheckUpKeepFalse() public {
+        vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+
+        // (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+        uint256 currentBalance = address(raffle).balance;
+        uint256 numPlayers = 1;
+        Raffle.RaffleState rState = raffle.getRaffleState();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(Raffle.Raffle__UpkeepNotNeeded.selector, currentBalance, numPlayers, rState)
+        );
+        raffle.performUpkeep("");
+        // (bool s,) = address(raffle).call(abi.encodeCall(raffle.performUpkeep, abi.encode(bytes(""))));
+        // assert(!s);
+    }
 }

@@ -44,6 +44,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error Raffle__NotOwner();
     error Raffle__NotEnoughFunds();
     error Raffle__NotReady();
+    error Raffle__UpkeepNotNeeded(uint256 balance, uint256 playersLenth, uint256 raffleState);
     error Raffle__TransferFailed();
     error Raffle__RaffleNotOpen();
 
@@ -115,8 +116,8 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
      * @return upkeepNeeded - true if it's time to restart the lottery
      * @return performData - data to be transfer to the perfomUpkeep() function
      */
-    function checkUpkeep(bytes calldata /*checkData*/ )
-        external
+    function checkUpkeep(bytes memory /*checkData*/ )
+        public
         view
         override
         returns (bool upkeepNeeded, bytes memory /* performData */ )
@@ -136,7 +137,11 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
      * Be automatically called
      */
     function pickWinner() internal {
-        if (block.timestamp < s_lastTimestamp + i_interval) revert Raffle__NotReady();
+        // if (block.timestamp < s_lastTimestamp + i_interval) revert Raffle__NotReady();
+        (bool upkeepNeeded,) = checkUpkeep("");
+        if (!upkeepNeeded) {
+            revert Raffle__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
+        }
 
         s_raffleState = RaffleState.PICKING;
 
